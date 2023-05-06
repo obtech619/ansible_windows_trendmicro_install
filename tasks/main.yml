@@ -1,0 +1,40 @@
+---
+
+- name: Create Local TrendMicro Directory
+  win_file:
+    path: "{{ trendmicro_dest }}"
+    state: directory
+
+
+- name: Download TrendMicro Agent 
+  win_get_url:
+    url: "{{ artifact_trendmicro_url }}"
+    dest: "{{ trendmicro_dest }}"
+    validate_certs: no
+    force: no
+    timeout: 90
+
+- name: Download TrendMicro Script 
+  win_get_url:
+    url: "{{ artifact_trendscript_url }}"
+    dest: "{{ trendmicro_dest }}"
+    validate_certs: no
+    force: no
+    timeout: 90
+
+
+- name: Execute TreandMicro Install
+  win_shell: "{{ trendmicro_wd }}{{ tminstall }}"
+  args:
+    chdir: "{{ trendmicro_wd }}"
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ env }}\{{ user }}'
+    ansible_become_password: "{{ pwd }}"  
+  register: task 
+
+- name: Reboot server post TrendMicro install
+  win_reboot:
+    pre_reboot_delay: 15
+  when: task.changed
